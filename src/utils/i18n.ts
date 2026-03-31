@@ -151,6 +151,19 @@ export const translations = {
     'Team Votes': 'Team Votes',
     'Quest Votes': 'Quest Votes',
     'failed the quest': 'failed the quest',
+
+    // Score Reasons
+    'Base Score': 'Base Score',
+    'Faction Win': 'Faction Win (+1)',
+    'Faction Loss': 'Faction Loss (-1)',
+    'Merlin Assassinated': 'Merlin Assassinated (-3)',
+    'Assassinated Merlin': 'Assassinated Merlin (+3)',
+    'Score Max Cap': 'Score Max Cap',
+    'Score Min Cap': 'Score Min Cap',
+    'Merlin Brought Evil': 'Merlin: Brought Evil Member (-2)',
+    'Percival Brought Morgana': 'Percival: Brought Morgana (-1)',
+    'Percival Brought Evil': 'Percival: Brought Evil Member (-2)',
+    'Good Proposer Brought Evil': 'Good Player: Brought Evil Member (-1)',
   },
   zh: {
     // Roles
@@ -302,6 +315,44 @@ export const translations = {
     'Team Votes': '组队投票',
     'Quest Votes': '任务投票',
     'failed the quest': '破坏了任务',
+
+    // Score Reasons
+    'Base Score': '初始基准分',
+    'Tie-breaker Win Bonus': '并列同分阵营获胜加成 (+1)',
+    'Faction Win': '阵营获胜 (+1)',
+    'Faction Loss': '阵营落败 (-1)',
+    'Merlin Assassinated': '错保梅林被刺杀 (-3)',
+    'Assassinated Merlin': '绝杀梅林加成 (+3)',
+    'Score Max Cap': '触发最高分上限',
+    'Score Min Cap': '触发最低分下限',
+    'Merlin Brought Evil': '梅林：带坏人上车 (-2)',
+    'Percival Brought Morgana': '派西维尔：带莫甘娜上车 (-1)',
+    'Percival Brought Evil': '派西维尔：带其他坏人上车 (-2)',
+    'Good Proposer Brought Evil': '好人：带坏人上车 (-1)',
+    
+    'Quest 1 Success': '任务 1 成功',
+    'Quest 2 Success': '任务 2 成功',
+    'Quest 3 Success': '任务 3 成功',
+    'Quest 4 Success': '任务 4 成功',
+    'Quest 5 Success': '任务 5 成功',
+    
+    'Quest 1 Fail (Off Team)': '任务 1 失败 (未在队伍中)',
+    'Quest 2 Fail (Off Team)': '任务 2 失败 (未在队伍中)',
+    'Quest 3 Fail (Off Team)': '任务 3 失败 (未在队伍中)',
+    'Quest 4 Fail (Off Team)': '任务 4 失败 (未在队伍中)',
+    'Quest 5 Fail (Off Team)': '任务 5 失败 (未在队伍中)',
+    
+    'Quest 1 Fail (Approved)': '任务 1 失败 (错投赞成发车)',
+    'Quest 2 Fail (Approved)': '任务 2 失败 (错投赞成发车)',
+    'Quest 3 Fail (Approved)': '任务 3 失败 (错投赞成发车)',
+    'Quest 4 Fail (Approved)': '任务 4 失败 (错投赞成发车)',
+    'Quest 5 Fail (Approved)': '任务 5 失败 (错投赞成发车)',
+    
+    'Quest 1 Fail (Rejected)': '任务 1 失败 (明智地投了反对)',
+    'Quest 2 Fail (Rejected)': '任务 2 失败 (明智地投了反对)',
+    'Quest 3 Fail (Rejected)': '任务 3 失败 (明智地投了反对)',
+    'Quest 4 Fail (Rejected)': '任务 4 失败 (明智地投了反对)',
+    'Quest 5 Fail (Rejected)': '任务 5 失败 (明智地投了反对)',
   }
 };
 

@@ -74,6 +74,8 @@ export interface Room {
     assassinationTarget: string | null;
     voteHistory: TeamVoteHistory[];
     botOpinions?: { botId: string; text: string; isError?: boolean }[];
+    playerScores?: Record<string, number>;
+    playerScoreDetails?: Record<string, {reason: string; delta: number}[]>;
   };
 }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGameStore } from "../store";
-import { Crown, Skull, Shield, RefreshCw, Check, X, ChevronDown, ChevronUp, ShieldAlert, Users, Target } from "lucide-react";
+import { Crown, Skull, Shield, RefreshCw, Check, X, ChevronDown, ChevronUp, ShieldAlert, Users, Target, Medal } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useTranslation } from "../utils/i18n";
 
@@ -10,6 +10,7 @@ export default function GameOverScreen() {
   const restartGame = useGameStore((state) => state.restartGame);
   const { t } = useTranslation();
   const [expandedQuest, setExpandedQuest] = useState<number | null>(null);
+  const [expandedScore, setExpandedScore] = useState<string | null>(null);
 
   if (!room) return null;
 
@@ -59,69 +60,130 @@ export default function GameOverScreen() {
         </p>
       </div>
 
-      {/* Roles Section */}
+      {/* Scored Roles Section */}
       <section className="mb-8">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-          {t("Roles in play")}
+          {t("Player Scores")}
         </h3>
         <div className="space-y-2">
-          {players.map((p) => {
-            const isEvil = [
-              "Assassin", "Morgana", "Mordred", "Minion", "Oberon",
-            ].includes(p.role as string);
-            const isTarget = gameState.assassinationTarget === p.sessionId;
+          {(() => {
+            const sortedPlayers = players.slice().sort((a, b) => {
+              const scoreA = gameState.playerScores?.[a.sessionId] ?? 0;
+              const scoreB = gameState.playerScores?.[b.sessionId] ?? 0;
+              return scoreB - scoreA;
+            });
+            const uniqueScores = Array.from(new Set(sortedPlayers.map(p => gameState.playerScores?.[p.sessionId] ?? 0)));
+
+            return sortedPlayers.map((p) => {
+              const isEvil = [
+                "Assassin", "Morgana", "Mordred", "Minion", "Oberon",
+              ].includes(p.role as string);
+              const isTarget = gameState.assassinationTarget === p.sessionId;
+              const rawScore = gameState.playerScores?.[p.sessionId];
+              const score = rawScore ?? "-";
+              const details = gameState.playerScoreDetails?.[p.sessionId] || [];
+              const isExpanded = expandedScore === p.sessionId;
+
+              const rank = rawScore !== undefined ? uniqueScores.indexOf(rawScore) : -1;
+              let scoreColor = "text-zinc-500"; // Default to dark grey
+              if (rawScore !== undefined && rawScore > 0) {
+                if (rank === 0) scoreColor = "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]";
+                else if (rank === 1) scoreColor = "text-slate-300 drop-shadow-[0_0_8px_rgba(203,213,225,0.4)]";
+                else if (rank === 2) scoreColor = "text-amber-600 drop-shadow-[0_0_8px_rgba(217,119,6,0.4)]";
+              } else if (rawScore === 0) {
+                scoreColor = "text-zinc-600";
+              }
 
             return (
-              <div
-                key={p.sessionId}
-                className={cn(
-                  "w-full flex items-center justify-between p-3 rounded-xl border text-left",
-                  isEvil
-                    ? "bg-red-950/10 border-red-900/30"
-                    : "bg-blue-950/10 border-blue-900/30",
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center border",
-                      isEvil
-                        ? "bg-red-900/20 border-red-800 text-red-500"
-                        : "bg-blue-900/20 border-blue-800 text-blue-500",
-                    )}
-                  >
-                    <span className="text-xs font-bold">
-                      {p.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div>
-                    <span
+              <div key={p.sessionId} className="rounded-xl border border-zinc-800 overflow-hidden">
+                <button
+                  onClick={() => setExpandedScore(isExpanded ? null : p.sessionId)}
+                  className={cn(
+                    "w-full flex items-center justify-between p-3 text-left transition-colors",
+                    isEvil
+                      ? "bg-red-950/10 hover:bg-red-950/20"
+                      : "bg-blue-950/10 hover:bg-blue-950/20",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
                       className={cn(
-                        "font-medium block text-sm",
-                        p.sessionId === sessionId && "text-white",
+                        "w-8 h-8 rounded-full flex items-center justify-center border",
+                        isEvil
+                          ? "bg-red-900/20 border-red-800 text-red-500"
+                          : "bg-blue-900/20 border-blue-800 text-blue-500",
                       )}
                     >
-                      {p.name} {p.sessionId === sessionId && "(You)"}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs uppercase tracking-wider font-medium",
-                        isEvil ? "text-red-400" : "text-blue-400",
-                      )}
-                    >
-                      {t(p.role as string)}
-                    </span>
+                      <span className="text-xs font-bold">
+                        {p.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span
+                        className={cn(
+                          "font-medium block text-sm",
+                          p.sessionId === sessionId && "text-white",
+                        )}
+                      >
+                        {p.name} {p.sessionId === sessionId && "(You)"}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs uppercase tracking-wider font-medium",
+                          isEvil ? "text-red-400" : "text-blue-400",
+                        )}
+                      >
+                        {t(p.role as string)}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {isTarget && (
-                  <div className="flex items-center gap-1 text-red-500 text-xs font-medium bg-red-950/50 px-2 py-1 rounded-md border border-red-900/50">
-                    <Skull size={12} /> {t("Assassinated")}
+                    <div className="flex items-center gap-3">
+                      {isTarget && (
+                        <div className="hidden sm:flex items-center gap-1 text-red-500 text-xs font-medium bg-red-950/50 px-2 py-1 rounded-md border border-red-900/50">
+                          <Skull size={12} /> {t("Assassinated")}
+                        </div>
+                      )}
+
+                      {rank >= 0 && rank <= 2 && rawScore !== undefined && rawScore > 0 && (
+                        <div className={cn(
+                          "flex items-center justify-center translate-y-[-1px]",
+                          rank === 0 ? "text-amber-400" : rank === 1 ? "text-slate-300" : "text-amber-600"
+                        )}>
+                          <Medal size={20} className="drop-shadow-sm" />
+                        </div>
+                      )}
+
+                      <div className={cn(
+                        "flex flex-col items-end justify-center min-w-[40px] pr-2 transition-all duration-300",
+                        scoreColor
+                      )}>
+                        <span className="text-2xl font-bold font-serif leading-none">{score}</span>
+                        <span className="text-[9px] uppercase tracking-widest text-zinc-500">{t("Pts")}</span>
+                      </div>
+                      {isExpanded ? <ChevronUp size={16} className="text-zinc-500" /> : <ChevronDown size={16} className="text-zinc-500" />}
+                    </div>
+                </button>
+
+                {isExpanded && details.length > 0 && (
+                  <div className="border-t border-zinc-800/50 p-4 bg-zinc-900/40 text-sm space-y-2">
+                    {details.map((detail, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-zinc-400">
+                        <span>{t(detail.reason)}</span>
+                        <span className={cn(
+                          "font-medium tabular-nums",
+                          detail.delta > 0 ? "text-emerald-400" : detail.delta < 0 ? "text-red-400" : "text-zinc-500"
+                        )}>
+                          {detail.delta > 0 ? "+" : ""}{detail.delta}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </section>
 

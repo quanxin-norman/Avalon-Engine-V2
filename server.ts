@@ -174,6 +174,8 @@ interface Room {
     voteHistory: TeamVoteHistory[];
     botMemories: Record<string, BotMemory>; // bot sessionId -> memory
     botOpinions?: BotOpinion[];
+    playerScores?: Record<string, number>;
+    playerScoreDetails?: Record<string, {reason: string; delta: number}[]>;
   };
   lastActivityTime: number;
   idleWarningEmitted: boolean;
@@ -653,9 +655,155 @@ function applyTeamVoteResult(room: Room, io: Server) {
   broadcastRoom(room, io);
   handleBotActions(room, io);
 }
+function calculatePlayerScores(room: Room) {
+  const scores: Record<string, number> = {};
+  const details: Record<string, {reason: string; delta: number}[]> = {};
+  
+  room.players.forEach(p => {
+    scores[p.sessionId] = 6;
+    details[p.sessionId] = [{ reason: 'Base Score', delta: 6 }];
+  });
+
+  room.gameState.quests.forEach((quest, index) => {
+    if (quest.status !== 'pending') {
+      const approvedTeam = room.gameState.voteHistory.find(v => v.questIndex === index && v.approved);
+      if (approvedTeam) {
+        const leader = room.players[approvedTeam.leaderIndex];
+        if (leader) {
+          const isLeaderEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(leader.role as string);
+          if (!isLeaderEvil) {
+            approvedTeam.proposedTeam.forEach(memberId => {
+              const member = room.players.find(p => p.sessionId === memberId);
+              if (member) {
+                const isMemberEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(member.role as string);
+                if (isMemberEvil) {
+                  if (leader.role === 'Merlin') {
+                    scores[leader.sessionId] -= 2;
+                    details[leader.sessionId].push({ reason: 'Merlin Brought Evil', delta: -2 });
+                  } else if (leader.role === 'Percival') {
+                    const delta = member.role === 'Morgana' ? -1 : -2;
+                    scores[leader.sessionId] += delta;
+                    const reason = member.role === 'Morgana' ? 'Percival Brought Morgana' : 'Percival Brought Evil';
+                    details[leader.sessionId].push({ reason, delta });
+                  } else {
+                    scores[leader.sessionId] -= 1;
+                    details[leader.sessionId].push({ reason: 'Good Proposer Brought Evil', delta: -1 });
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+
+    if (quest.status === 'success') {
+      room.players.forEach(p => {
+        const isEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(p.role as string);
+        const delta = isEvil ? -1 : 1;
+        scores[p.sessionId] += delta;
+        details[p.sessionId].push({ reason: `Quest ${index + 1} Success`, delta });
+      });
+    } else if (quest.status === 'fail') {
+      const approvedVote = room.gameState.voteHistory.filter(v => v.questIndex === index && v.approved).pop();
+      if (approvedVote) {
+        room.players.forEach(p => {
+          if (!quest.team.includes(p.sessionId)) {
+            const isEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(p.role as string);
+            if (isEvil) {
+              scores[p.sessionId] += 1;
+              details[p.sessionId].push({ reason: `Quest ${index + 1} Fail (Off Team)`, delta: 1 });
+            } else {
+              const votedApprove = approvedVote.votes[p.sessionId];
+              if (votedApprove) {
+                scores[p.sessionId] -= 1;
+                details[p.sessionId].push({ reason: `Quest ${index + 1} Fail (Approved)`, delta: -1 });
+              } else {
+                scores[p.sessionId] += 1;
+                details[p.sessionId].push({ reason: `Quest ${index + 1} Fail (Rejected)`, delta: 1 });
+              }
+            }
+          }
+        });
+      }
+    }
+  });
+
+  const successes = room.gameState.quests.filter(q => q.status === 'success').length;
+  let assassinKilledMerlin = false;
+  
+  if (successes >= 3 && room.gameState.winner === 'evil' && room.gameState.assassinationTarget) {
+     const targetPlayer = room.players.find(p => p.sessionId === room.gameState.assassinationTarget);
+     if (targetPlayer && targetPlayer.role === 'Merlin') {
+         assassinKilledMerlin = true;
+     }
+  }
+
+  if (assassinKilledMerlin) {
+    room.players.forEach(p => {
+      const isEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(p.role as string);
+      if (!isEvil) {
+        scores[p.sessionId] -= 3;
+        details[p.sessionId].push({ reason: `Merlin Assassinated`, delta: -3 });
+      }
+      if (p.role === 'Assassin') {
+        scores[p.sessionId] += 3;
+        details[p.sessionId].push({ reason: `Assassinated Merlin`, delta: 3 });
+      }
+    });
+  }
+
+  if (room.gameState.winner) {
+    const winner = room.gameState.winner;
+    room.players.forEach(p => {
+      const isEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(p.role as string);
+      if ((winner === 'evil' && isEvil) || (winner === 'good' && !isEvil)) {
+        scores[p.sessionId] += 1;
+        details[p.sessionId].push({ reason: `Faction Win`, delta: 1 });
+      } else {
+        scores[p.sessionId] -= 1;
+        details[p.sessionId].push({ reason: `Faction Loss`, delta: -1 });
+      }
+    });
+  }
+
+  const scoreCounts: Record<number, number> = {};
+  room.players.forEach(p => {
+    scoreCounts[scores[p.sessionId]] = (scoreCounts[scores[p.sessionId]] || 0) + 1;
+  });
+
+  room.players.forEach(p => {
+    const isEvil = ['Assassin', 'Morgana', 'Mordred', 'Minion', 'Oberon'].includes(p.role as string);
+    const isWinner = (room.gameState.winner === 'evil' && isEvil) || (room.gameState.winner === 'good' && !isEvil);
+    
+    // Tie-breaker
+    if (scoreCounts[scores[p.sessionId]] > 1 && isWinner) {
+      scores[p.sessionId] += 1;
+      details[p.sessionId].push({ reason: `Tie-breaker Win Bonus`, delta: 1 });
+    }
+  });
+
+  room.players.forEach(p => {
+    if (scores[p.sessionId] > 10) {
+      const penalty = 10 - scores[p.sessionId];
+      scores[p.sessionId] = 10;
+      details[p.sessionId].push({ reason: `Score Max Cap`, delta: penalty });
+    }
+    if (scores[p.sessionId] < 0) {
+      const bonus = 0 - scores[p.sessionId];
+      scores[p.sessionId] = 0;
+      details[p.sessionId].push({ reason: `Score Min Cap`, delta: bonus });
+    }
+  });
+
+  room.gameState.playerScores = scores;
+  room.gameState.playerScoreDetails = details;
+}
 
 function recordGameStats(room: Room) {
   if (!room.gameState.winner) return;
+
+  calculatePlayerScores(room);
 
   room.players.forEach(player => {
     if (player.isBot || !player.userId) return;
