@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGameStore } from "../store";
-import { Crown, Skull, Shield, RefreshCw, Check, X, ChevronDown, ChevronUp, ShieldAlert, Users, Target, Medal } from "lucide-react";
+import { Crown, Skull, Shield, RefreshCw, Check, X, ChevronDown, ChevronUp, ShieldAlert, Users, Target, Medal, Brain, Copy, CheckCheck } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useTranslation } from "../utils/i18n";
 
@@ -11,6 +11,8 @@ export default function GameOverScreen() {
   const { t } = useTranslation();
   const [expandedQuest, setExpandedQuest] = useState<number | null>(null);
   const [expandedScore, setExpandedScore] = useState<string | null>(null);
+  const [expandedMindLog, setExpandedMindLog] = useState<string | null>(null);
+  const [copiedLog, setCopiedLog] = useState<string | null>(null);
 
   if (!room) return null;
 
@@ -382,6 +384,94 @@ export default function GameOverScreen() {
           })}
         </div>
       </section>
+
+      {/* AI Mind Logs */}
+      {gameState.botMindLogs && Object.keys(gameState.botMindLogs).length > 0 && (
+        <section className="mb-8">
+          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Brain size={14} className="text-violet-400" />
+            {t("AI Mind Log")}
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(gameState.botMindLogs).map(([botId, rawLogs]) => {
+              const logs = rawLogs as { phase: string; prompt: string; response: string; decision: string; timestamp: number }[];
+              const botPlayer = players.find(p => p.sessionId === botId);
+              if (!botPlayer || !logs || logs.length === 0) return null;
+              const isExpanded = expandedMindLog === botId;
+              const isCopied = copiedLog === botId;
+
+              const formatLogForCopy = () => {
+                return `=== ${botPlayer.name} (${t(botPlayer.role as string)}) Mind Log ===\n\n` +
+                  logs.map((log, i) => {
+                    return `--- ${log.phase} [${new Date(log.timestamp).toLocaleTimeString()}] ---\nPrompt: ${log.prompt}\nResponse: ${log.response}\nDecision: ${log.decision}\n`;
+                  }).join('\n');
+              };
+
+              const handleCopy = async () => {
+                try {
+                  await navigator.clipboard.writeText(formatLogForCopy());
+                  setCopiedLog(botId);
+                  setTimeout(() => setCopiedLog(null), 2000);
+                } catch {
+                  // Fallback for older browsers
+                  const textArea = document.createElement('textarea');
+                  textArea.value = formatLogForCopy();
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  setCopiedLog(botId);
+                  setTimeout(() => setCopiedLog(null), 2000);
+                }
+              };
+
+              return (
+                <div key={botId} className="rounded-xl border border-violet-900/30 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedMindLog(isExpanded ? null : botId)}
+                    className="w-full flex items-center justify-between p-4 text-left bg-violet-950/15 hover:bg-violet-950/25 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Brain size={18} className="text-violet-400" />
+                      <div>
+                        <span className="font-medium text-sm block">{botPlayer.name}</span>
+                        <span className="text-xs text-violet-400 uppercase tracking-wider">{t(botPlayer.role as string)} - {logs.length} entries</span>
+                      </div>
+                    </div>
+                    {isExpanded ? <ChevronUp size={16} className="text-zinc-500" /> : <ChevronDown size={16} className="text-zinc-500" />}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t border-violet-900/30 p-4 space-y-3 bg-zinc-950/50">
+                      <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-violet-700/50 text-violet-400 hover:bg-violet-950/30 transition-colors"
+                      >
+                        {isCopied ? <CheckCheck size={12} /> : <Copy size={12} />}
+                        {isCopied ? t("Copied!") : t("Copy Log")}
+                      </button>
+                      {logs.map((log, i) => (
+                        <div key={i} className="bg-zinc-900/60 border border-zinc-800 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-violet-400 uppercase tracking-wider">{log.phase}</span>
+                            <span className="text-xs text-zinc-600">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                          </div>
+                          <div className="text-xs text-zinc-500 bg-zinc-950/50 rounded p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                            {log.response}
+                          </div>
+                          <div className="text-xs text-zinc-400">
+                            <span className="text-zinc-600">Decision:</span> {log.decision}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Actions */}
       <div className="sticky bottom-0 bg-zinc-950/90 backdrop-blur-xl pt-4 pb-2 -mx-6 px-6 border-t border-zinc-900">

@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameStore } from "../store";
-import { Check, X, Crown, Users, Target, ShieldAlert, LogOut, History, Eye, Shield, Skull, MessageSquare, Bot, Sparkles } from "lucide-react";
+import { Check, X, Crown, Users, Target, ShieldAlert, LogOut, History, Eye, Shield, Skull, MessageSquare, Bot, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "../utils/cn";
 import { useTranslation } from "../utils/i18n";
 import VoteHistoryHeader from "./VoteHistoryHeader";
 import VoteHistoryDetails from "./VoteHistoryDetails";
+
+const BOT_LOADING_WORDS = [
+  "Scheming", "Pondering", "Napping", "Caffeinating",
+  "Conspiring", "Buffering", "Philosophizing", "Daydreaming",
+  "Overthinking", "Manifesting", "Procrastinating", "Plotting",
+  "Vibing", "Computing", "Calculating", "Meditating", "Strategizing",
+  "Deliberating", "Hesitating", "Snoozing",
+];
 
 export default function GameScreen() {
   const room = useGameStore((state) => state.room);
@@ -19,6 +27,14 @@ export default function GameScreen() {
   const [selectedTeam, setSelectedTeam] = useState<string[]>([]);
   const [viewingHistoryIndex, setViewingHistoryIndex] = useState<number | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [loadingWordIndex, setLoadingWordIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingWordIndex(i => (i + 1) % BOT_LOADING_WORDS.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!room) return null;
 
@@ -232,6 +248,13 @@ export default function GameScreen() {
                         {isCurrentLeader && (
                           <Crown size={16} className="text-amber-500" />
                         )}
+                        {status === "team_voting" && p.isBot && p.hasApiKey &&
+                          !(p.sessionId in gameState.teamVotes) && (
+                            <span className="text-xs bg-indigo-950/50 text-indigo-400 px-2 py-1 rounded-md flex items-center gap-1">
+                              <Loader2 size={10} className="animate-spin" />
+                              {BOT_LOADING_WORDS[loadingWordIndex]}
+                            </span>
+                          )}
                         {status === "team_voting" &&
                           p.sessionId in gameState.teamVotes && (
                             <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-md">
@@ -249,6 +272,14 @@ export default function GameScreen() {
                             </div>
                           )
                         )}
+                        {status === "quest_voting" && p.isBot && p.hasApiKey &&
+                          gameState.proposedTeam.includes(p.sessionId) &&
+                          !(p.sessionId in currentQuest.votes) && (
+                            <span className="text-xs bg-indigo-950/50 text-indigo-400 px-2 py-1 rounded-md flex items-center gap-1">
+                              <Loader2 size={10} className="animate-spin" />
+                              {BOT_LOADING_WORDS[loadingWordIndex]}
+                            </span>
+                          )}
                         {status === "quest_voting" &&
                           gameState.proposedTeam.includes(p.sessionId) &&
                           p.sessionId in currentQuest.votes && (

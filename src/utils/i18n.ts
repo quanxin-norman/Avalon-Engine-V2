@@ -30,8 +30,10 @@ export const translations = {
     'Add Bot': 'Add Bot',
     'Add Normal Bot': '+ Normal Bot',
     'Add Hard Bot': '+ Hard Bot',
+    'Add AI Bot': '+ AI Agent',
     'Normal Bot': 'Normal Bot',
     'Hard Bot': 'Hard Bot',
+    'AI Bot': 'AI Agent',
     'Leave Room': 'Leave Room',
     'End Game': 'End Game',
     'Kick': 'Kick',
@@ -151,7 +153,6 @@ export const translations = {
     'Team Votes': 'Team Votes',
     'Quest Votes': 'Quest Votes',
     'failed the quest': 'failed the quest',
-
     // Score Reasons
     'Base Score': 'Base Score',
     'Faction Win': 'Faction Win (+1)',
@@ -164,6 +165,10 @@ export const translations = {
     'Percival Brought Morgana': 'Percival: Brought Morgana (-1)',
     'Percival Brought Evil': 'Percival: Brought Evil Member (-2)',
     'Good Proposer Brought Evil': 'Good Player: Brought Evil Member (-1)',
+
+    'AI Mind Log': 'AI Mind Log',
+    'Copy Log': 'Copy Log',
+    'Copied!': 'Copied!',
   },
   zh: {
     // Roles
@@ -194,8 +199,10 @@ export const translations = {
     'Add Bot': '添加机器人',
     'Add Normal Bot': '+ 普通机器人',
     'Add Hard Bot': '+ 困难机器人',
+    'Add AI Bot': '+ 智能体',
     'Normal Bot': '普通机器人',
     'Hard Bot': '困难机器人',
+    'AI Bot': '智能体',
     'Leave Room': '离开房间',
     'End Game': '结束游戏',
     'Kick': '踢出',
@@ -315,7 +322,6 @@ export const translations = {
     'Team Votes': '组队投票',
     'Quest Votes': '任务投票',
     'failed the quest': '破坏了任务',
-
     // Score Reasons
     'Base Score': '初始基准分',
     'Tie-breaker Win Bonus': '并列同分阵营获胜加成 (+1)',
@@ -353,6 +359,10 @@ export const translations = {
     'Quest 3 Fail (Rejected)': '任务 3 失败 (明智地投了反对)',
     'Quest 4 Fail (Rejected)': '任务 4 失败 (明智地投了反对)',
     'Quest 5 Fail (Rejected)': '任务 5 失败 (明智地投了反对)',
+
+    'AI Mind Log': 'AI 思维日志',
+    'Copy Log': '复制日志',
+    'Copied!': '已复制！',
   }
 };
 

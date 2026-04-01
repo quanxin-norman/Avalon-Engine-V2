@@ -22,6 +22,7 @@ export interface Player {
   isConnected: boolean;
   isHost: boolean;
   isBot?: boolean;
+  botClass?: 'normal' | 'hard' | 'ai';
   apiKey?: string;
   hasApiKey?: boolean;
   provider?: 'gemini' | 'openrouter' | 'groq' | 'nvidia';
@@ -74,6 +75,7 @@ export interface Room {
     assassinationTarget: string | null;
     voteHistory: TeamVoteHistory[];
     botOpinions?: { botId: string; text: string; isError?: boolean }[];
+    botMindLogs?: Record<string, { phase: string; prompt: string; response: string; decision: string; timestamp: number }[]>;
     playerScores?: Record<string, number>;
     playerScoreDetails?: Record<string, {reason: string; delta: number}[]>;
   };
@@ -117,7 +119,7 @@ interface GameState {
   updateSettings: (settings: Partial<Room["settings"]>) => void;
   updateBotApiKey: (botSessionId: string, apiKey: string, provider?: 'gemini' | 'openrouter' | 'groq' | 'nvidia', model?: string) => void;
   testBotApiKey: (provider: 'gemini' | 'openrouter' | 'groq' | 'nvidia', apiKey: string, model?: string) => Promise<{ success: boolean; message: string }>;
-  addBot: (difficulty?: 'normal' | 'hard') => void;
+  addBot: (botClass?: 'normal' | 'hard' | 'ai') => void;
   startGame: (requestedRoles?: Record<string, Role>) => void;
   leaveRoom: () => void;
   kickPlayer: (targetSessionId: string) => void;
@@ -252,12 +254,12 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      addBot: (difficulty?: 'normal' | 'hard') => {
+      addBot: (botClass?: 'normal' | 'hard' | 'ai') => {
         const { socket, room } = get();
         if (!socket || !room) return;
 
         const roomId = room.id;
-        socket?.emit("add_bot", { roomId, difficulty: difficulty || 'normal' });
+        socket?.emit("add_bot", { roomId, botClass: botClass || 'normal' });
       },
 
       startGame: (requestedRoles) => {

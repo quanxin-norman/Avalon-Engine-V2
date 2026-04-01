@@ -9,6 +9,7 @@ export interface Player {
   isConnected: boolean;
   isHost: boolean;
   isBot?: boolean;
+  botClass?: 'normal' | 'hard' | 'ai'; // Bot class: normal/hard are rule-based, ai uses LLM
   apiKey?: string;
   hasApiKey?: boolean;
   provider?: 'gemini' | 'openrouter' | 'groq' | 'nvidia';

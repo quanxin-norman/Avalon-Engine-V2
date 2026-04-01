@@ -1,5 +1,5 @@
 import { useGameStore, Role } from "../store";
-import { Users, Settings, Play, LogOut, Bot, UserMinus, Plus, ChevronDown, Sparkles } from "lucide-react";
+import { Users, Settings, Play, LogOut, Bot, UserMinus, Plus, ChevronDown, Sparkles, Brain } from "lucide-react";
 import { useTranslation } from "../utils/i18n";
 import { useState } from "react";
 
@@ -29,9 +29,9 @@ const PROVIDER_MODELS: Record<Provider, { label: string; value: string }[]> = {
   ],
   nvidia: [
     { label: 'Llama 3.3 70B Instruct', value: 'meta/llama-3.3-70b-instruct' },
-    { label: 'Nemotron 70B Instruct', value: 'nvidia/llama-3.1-nemotron-70b-instruct' },
-    { label: 'DeepSeek R1', value: 'deepseek-ai/deepseek-r1' },
-    { label: 'MiniMax-01', value: 'minimax/minimax-01' },
+    { label: 'Nemotron Super 49B', value: 'nvidia/llama-3.3-nemotron-super-49b-v1.5' },
+    { label: 'DeepSeek R1 (0528)', value: 'deepseek-ai/deepseek-r1-0528' },
+    { label: 'MiniMax M2.5', value: 'minimaxai/minimax-m2.5' },
     { label: 'Mixtral 8x7B Instruct', value: 'mistralai/mixtral-8x7b-instruct-v0.1' },
   ],
 };
@@ -169,6 +169,13 @@ export default function LobbyScreen() {
                   >
                     <span>{t('Add Hard Bot')}</span>
                   </button>
+                  <button
+                    onClick={() => addBot('ai')}
+                    className="text-xs flex items-center gap-1 text-white font-medium transition-all duration-200 bg-gradient-to-r from-violet-600 to-indigo-500 px-1.5 py-0.5 rounded-lg border border-violet-400/30 hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/25 active:scale-95"
+                    title={t("Add AI Bot")}
+                  >
+                    <span>{t('Add AI Bot')}</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -181,8 +188,9 @@ export default function LobbyScreen() {
                   <div className="p-4 flex items-center justify-between">
                     <span className="font-medium flex items-center gap-2">
                       {p.name} {p.sessionId === sessionId && "(You)"}
-                      {p.isBot && <Bot size={18} className={p.difficulty === "hard" ? "text-amber-400" : "text-zinc-400"} />}
-                      {p.isBot && p.hasApiKey && <Sparkles size={14} className="text-indigo-400" />}
+                      {p.isBot && p.botClass === 'ai' && <Brain size={18} className="text-violet-400" />}
+                      {p.isBot && p.botClass !== 'ai' && <Bot size={18} className={p.botClass === "hard" ? "text-amber-400" : "text-zinc-400"} />}
+                      {p.isBot && p.botClass === 'ai' && p.hasApiKey && <Sparkles size={14} className="text-indigo-400" />}
                     </span>
                     <div className="flex items-center gap-2">
                       {p.isHost && (
@@ -206,7 +214,7 @@ export default function LobbyScreen() {
                       )}
                     </div>
                   </div>
-                  {p.isBot && isHost && (
+                  {p.isBot && p.botClass === 'ai' && isHost && (
                     <div className="px-4 pb-4 pt-3 border-t border-zinc-800/50 flex flex-col gap-2">
                       {/* Provider */}
                       <select
